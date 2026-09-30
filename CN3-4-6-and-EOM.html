@@ -1,0 +1,1048 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Eye Movements: Ocular Motor Nerves and INO</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#101b2c;
+  color:#eef4ff;
+  font:16px system-ui,sans-serif;
+}
+main{max-width:1100px;margin:auto;padding:24px}
+h1{font-size:28px;margin:0 0 8px}
+h2{font-size:19px;margin:0 0 12px}
+p{line-height:1.6}
+.muted,.note{color:#b7c7dc}
+.note{font-size:14px}
+.panel{
+  background:#192940;
+  border:1px solid #334a65;
+  border-radius:16px;
+  padding:18px;
+  margin:16px 0;
+}
+.controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  align-items:end;
+}
+.controls label{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+button,select{
+  color:#eef4ff;
+  background:#263e5e;
+  border:1px solid #6681a1;
+  border-radius:8px;
+  padding:10px;
+  font:inherit;
+  cursor:pointer;
+}
+button:hover,select:hover{border-color:#65dde7}
+button:focus-visible,
+select:focus-visible,
+input:focus-visible{
+  outline:3px solid #ffd47c;
+  outline-offset:3px;
+}
+button.active{background:#176c83;border-color:#65dde7}
+.columns{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+fieldset{
+  border:1px solid #526b89;
+  border-radius:12px;
+  padding:14px;
+}
+legend{padding:0 8px;font-weight:600}
+.check{display:block;margin:10px 0;line-height:1.5}
+input[type=checkbox]{
+  accent-color:#56d3df;
+  width:18px;
+  height:18px;
+  vertical-align:middle;
+}
+#gazes{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:16px;
+}
+#heading{
+  color:#70e4ed;
+  font-size:22px;
+  font-weight:600;
+}
+#phase{color:#ffd47c;margin:8px 0}
+#status{font-size:14px;color:#b7c7dc}
+svg{display:block;width:100%;height:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{
+  text-align:left;
+  vertical-align:top;
+  padding:10px;
+  border-bottom:1px solid #3a506b;
+  line-height:1.6;
+}
+.badge{color:#ffaaaa}
+.good{color:#85e6c2}
+a{color:#8ddbe9}
+#findings p{margin:10px 0}
+@media(max-width:650px){
+  main{padding:14px}
+  .columns{grid-template-columns:1fr}
+  h1{font-size:24px}
+  .controls label{width:100%}
+}
+</style>
+</head>
+
+<body>
+<main>
+<h1>Eye Movements and Ocular Motor Lesions</h1>
+<p class="muted">
+  Normal function, peripheral CN III, IV, and VI palsies,
+  and MLF lesions producing internuclear ophthalmoplegia (INO).
+  Anterior view: the patient's right eye is on your left.
+</p>
+
+<div class="panel">
+  <div class="controls">
+    <button id="play" type="button">Pause</button>
+    <button id="next" type="button">Next gaze</button>
+    <button id="normal" type="button">Reset to normal</button>
+
+    <label>
+      Playback
+      <select id="playback">
+        <option value="all">All gaze positions</option>
+        <option value="single">Repeat selected gaze</option>
+      </select>
+    </label>
+
+    <label>
+      Speed
+      <select id="speed">
+        <option value="0.6">Slow</option>
+        <option value="1" selected>Normal</option>
+        <option value="1.5">Fast</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="columns" style="margin-top:18px">
+    <fieldset>
+      <legend>Patient's right side</legend>
+
+      <label class="check">
+        <input id="R3" type="checkbox"> Right CN III palsy
+      </label>
+
+      <label class="check">
+        <input id="R4" type="checkbox"> Right CN IV palsy
+      </label>
+
+      <label class="check">
+        <input id="R6" type="checkbox"> Right CN VI palsy
+      </label>
+
+      <label class="check">
+        <input id="RMLF" type="checkbox"> Right MLF lesion (INO)
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Patient's left side</legend>
+
+      <label class="check">
+        <input id="L3" type="checkbox"> Left CN III palsy
+      </label>
+
+      <label class="check">
+        <input id="L4" type="checkbox"> Left CN IV palsy
+      </label>
+
+      <label class="check">
+        <input id="L6" type="checkbox"> Left CN VI palsy
+      </label>
+
+      <label class="check">
+        <input id="LMLF" type="checkbox"> Left MLF lesion (INO)
+      </label>
+    </fieldset>
+  </div>
+
+  <label class="check">
+    <input id="ptosis" type="checkbox">
+    Show ptosis in CN III palsy
+  </label>
+
+  <label class="check">
+    <input id="pupil" type="checkbox">
+    Show pupil involvement in CN III palsy
+  </label>
+
+  <label class="check">
+    <input id="reference" type="checkbox" checked>
+    Show normal-position reference markers
+  </label>
+
+  <div id="gazes" aria-label="Select gaze position"></div>
+  <p id="status"></p>
+</div>
+
+<div class="panel">
+  <div id="heading"></div>
+  <div id="phase"></div>
+
+  <svg
+    viewBox="0 0 1000 390"
+    role="img"
+    aria-labelledby="svg-title svg-description"
+  >
+    <title id="svg-title">Eye movement simulator</title>
+    <desc id="svg-description">
+      Anterior view of both eyes showing normal gaze movements
+      and selected ocular motor deficits. Gold iris markers show
+      torsion. Dashed rings show normal reference positions.
+    </desc>
+
+    <defs>
+      <radialGradient id="white" cx="40%" cy="35%">
+        <stop offset="0" stop-color="#ffffff"/>
+        <stop offset="1" stop-color="#b6c6d8"/>
+      </radialGradient>
+
+      <radialGradient id="iris">
+        <stop offset="0" stop-color="#16394c"/>
+        <stop offset="0.7" stop-color="#419bb0"/>
+        <stop offset="1" stop-color="#173c51"/>
+      </radialGradient>
+
+      <clipPath id="clipR">
+        <circle cx="290" cy="200" r="125"/>
+      </clipPath>
+
+      <clipPath id="clipL">
+        <circle cx="710" cy="200" r="125"/>
+      </clipPath>
+    </defs>
+
+    <text
+      x="290" y="35"
+      text-anchor="middle"
+      fill="#d3dfee"
+      font-size="19"
+    >Patient's RIGHT eye</text>
+
+    <text
+      x="710" y="35"
+      text-anchor="middle"
+      fill="#d3dfee"
+      font-size="19"
+    >Patient's LEFT eye</text>
+
+    <path
+      d="M490 125 Q460 205 490 275 M510 125 Q540 205 510 275"
+      fill="none"
+      stroke="#8198b4"
+      stroke-width="4"
+    />
+
+    <text
+      x="500" y="310"
+      text-anchor="middle"
+      fill="#aebfd4"
+      font-size="16"
+    >Nose</text>
+
+    <circle cx="290" cy="200" r="125" fill="url(#white)"/>
+    <circle cx="710" cy="200" r="125" fill="url(#white)"/>
+
+    <g clip-path="url(#clipR)">
+      <g id="eyeR">
+        <circle
+          r="49"
+          fill="url(#iris)"
+          stroke="#153648"
+          stroke-width="3"
+        />
+        <circle id="pupilR" r="20" fill="#07101b"/>
+        <path
+          d="M0 -47 L0 -30"
+          stroke="#ffd16a"
+          stroke-width="6"
+          stroke-linecap="round"
+        />
+        <circle
+          cx="-15" cy="-18" r="6"
+          fill="white" opacity="0.75"
+        />
+      </g>
+
+      <g id="refR" opacity="0.8">
+        <circle
+          r="53"
+          fill="none"
+          stroke="#24a4b4"
+          stroke-width="3"
+          stroke-dasharray="7 5"
+        />
+        <path
+          d="M0 -65 V-54"
+          stroke="#24a4b4"
+          stroke-width="3"
+        />
+      </g>
+
+      <rect
+        id="lidR"
+        x="160" y="70"
+        width="260" height="0"
+        fill="#c69782"
+        stroke="#8d6759"
+        stroke-width="2"
+      />
+    </g>
+
+    <g clip-path="url(#clipL)">
+      <g id="eyeL">
+        <circle
+          r="49"
+          fill="url(#iris)"
+          stroke="#153648"
+          stroke-width="3"
+        />
+        <circle id="pupilL" r="20" fill="#07101b"/>
+        <path
+          d="M0 -47 L0 -30"
+          stroke="#ffd16a"
+          stroke-width="6"
+          stroke-linecap="round"
+        />
+        <circle
+          cx="-15" cy="-18" r="6"
+          fill="white" opacity="0.75"
+        />
+      </g>
+
+      <g id="refL" opacity="0.8">
+        <circle
+          r="53"
+          fill="none"
+          stroke="#24a4b4"
+          stroke-width="3"
+          stroke-dasharray="7 5"
+        />
+        <path
+          d="M0 -65 V-54"
+          stroke="#24a4b4"
+          stroke-width="3"
+        />
+      </g>
+
+      <rect
+        id="lidL"
+        x="580" y="70"
+        width="260" height="0"
+        fill="#c69782"
+        stroke="#8d6759"
+        stroke-width="2"
+      />
+    </g>
+
+    <circle
+      cx="290" cy="200" r="125"
+      fill="none"
+      stroke="#7189a4"
+      stroke-width="3"
+    />
+
+    <circle
+      cx="710" cy="200" r="125"
+      fill="none"
+      stroke="#7189a4"
+      stroke-width="3"
+    />
+
+    <text
+      x="500" y="370"
+      text-anchor="middle"
+      fill="#ffd16a"
+      font-size="15"
+    >Gold marker: superior iris pole • Dashed ring: normal reference</text>
+  </svg>
+</div>
+
+<div class="panel">
+  <h2>Muscles emphasized in the selected gaze</h2>
+  <div id="muscles"></div>
+
+  <h2 style="margin-top:20px">Findings</h2>
+  <div id="findings"></div>
+</div>
+
+<div class="panel note">
+  <h2>Using the simulator</h2>
+
+  <p>
+    Directions refer to the patient. Choose a gaze and select
+    “Repeat selected gaze” to repeat that movement. Select
+    “All gaze positions” for continuous sequential playback.
+    Pause freezes the animation. Selecting another gaze or
+    lesion restarts the movement while preserving the
+    play/pause state.
+  </p>
+
+  <p>
+    To demonstrate right INO, select Right MLF lesion and
+    Left gaze. To demonstrate left INO, select Left MLF lesion
+    and Right gaze. Select both MLF lesions for bilateral INO.
+    Abducting nystagmus is animated during the gaze-holding phase.
+  </p>
+
+  <h2>Model limitations</h2>
+
+  <p>
+    This is a qualitative teaching model. Movement amplitudes,
+    resting deviations, torsion, and nystagmus timing are
+    illustrative. Clinical findings vary with lesion severity,
+    fixation, chronicity, and orbital mechanics.
+  </p>
+
+  <p>
+    Peripheral nerve selections illustrate complete motor
+    palsies. Vertical rectus actions are emphasized in
+    abduction and oblique vertical actions in adduction;
+    these positions do not completely isolate a muscle.
+    Normal movement requires coordinated muscle activity.
+  </p>
+
+  <p>
+    MLF selections illustrate severe impairment of ipsilateral
+    adduction during conjugate gaze and contralateral abducting
+    nystagmus. Clinical INO may produce slowed or partially
+    restricted adduction. Convergence can be preserved, but
+    is not tested here. Associated skew deviation and other
+    central ocular motor abnormalities are not modeled.
+    Isolated INO is displayed without ptosis, pupil dilation,
+    or a resting horizontal deviation.
+  </p>
+
+  <p>
+    Combined deficits are schematic. Resting alignment for
+    multiple peripheral nerve palsies is not quantitatively
+    modeled. A peripheral nerve palsy can mask an INO sign.
+    This model does not represent a CN VI nuclear lesion,
+    conjugate gaze palsy, or one-and-a-half syndrome.
+  </p>
+
+  <p>
+    Ptosis and pupil involvement are optional so that eye
+    movements remain visible. Pupil dilation is not present
+    in every CN III palsy. Diplopic images, accommodation,
+    compensatory head posture, and the head-tilt test are
+    not simulated.
+  </p>
+
+  <p>
+    References:
+    <a
+      href="https://eyewiki.aao.org/Extraocular_Muscles"
+      target="_blank" rel="noopener noreferrer"
+    >Extraocular muscles</a> ·
+    <a
+      href="https://eyewiki.aao.org/Acquired_Oculomotor_Nerve_Palsy"
+      target="_blank" rel="noopener noreferrer"
+    >CN III palsy</a> ·
+    <a
+      href="https://eyewiki.aao.org/Cranial_Nerve_4_Palsy"
+      target="_blank" rel="noopener noreferrer"
+    >CN IV palsy</a> ·
+    <a
+      href="https://eyewiki.aao.org/Abducens_Nerve_Palsy"
+      target="_blank" rel="noopener noreferrer"
+    >CN VI palsy</a> ·
+    <a
+      href="https://eyewiki.aao.org/Internuclear_Ophthalmoplegia"
+      target="_blank" rel="noopener noreferrer"
+    >Internuclear ophthalmoplegia</a>
+  </p>
+</div>
+</main>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+
+/*
+  Coordinates:
+  Screen-left is the patient's right.
+  Right-eye nasal movement is screen-right.
+  Left-eye nasal movement is screen-left.
+  Positive y is downward.
+*/
+
+const gazes = [
+  { name: "Primary position", x: 0, y: 0 },
+  { name: "Right", x: -1, y: 0 },
+  { name: "Up-right", x: -1, y: -1 },
+  { name: "Down-right", x: -1, y: 1 },
+  { name: "Left", x: 1, y: 0 },
+  { name: "Up-left", x: 1, y: -1 },
+  { name: "Down-left", x: 1, y: 1 },
+  { name: "Up", x: 0, y: -1 },
+  { name: "Down", x: 0, y: 1 }
+];
+
+const nerve = {
+  MR: 3,
+  LR: 6,
+  SR: 3,
+  IR: 3,
+  SO: 4,
+  IO: 3
+};
+
+const names = {
+  MR: "Medial rectus",
+  LR: "Lateral rectus",
+  SR: "Superior rectus",
+  IR: "Inferior rectus",
+  SO: "Superior oblique",
+  IO: "Inferior oblique"
+};
+
+const duration = 7;
+
+let index = 0;
+let time = 0;
+let playing = true;
+let last = null;
+
+function palsies(side) {
+  return {
+    3: $(side + "3").checked,
+    4: $(side + "4").checked,
+    6: $(side + "6").checked
+  };
+}
+
+function smooth(value) {
+  const v = Math.max(0, Math.min(1, value));
+  return v * v * (3 - 2 * v);
+}
+
+function progress(t) {
+  if (t < 1) return 0;
+  if (t < 3) return smooth((t - 1) / 2);
+  if (t < 5) return 1;
+  return 1 - smooth((t - 5) / 2);
+}
+
+function emphasized(side, gaze) {
+  const nasal = side === "R" ? 1 : -1;
+  const result = [];
+
+  if (gaze.x !== 0) {
+    result.push(gaze.x * nasal > 0 ? "MR" : "LR");
+  }
+
+  if (gaze.y !== 0) {
+    if (gaze.x === 0) {
+      result.push(
+        ...(gaze.y < 0 ? ["SR", "IO"] : ["IR", "SO"])
+      );
+    } else {
+      const adducted = gaze.x * nasal > 0;
+
+      result.push(
+        gaze.y < 0
+          ? (adducted ? "IO" : "SR")
+          : (adducted ? "SO" : "IR")
+      );
+    }
+  }
+
+  return result;
+}
+
+/*
+  Qualitative movement-component model.
+  This is not a biomechanical force-balance simulation.
+*/
+function position(side, gaze, p) {
+  const n = palsies(side);
+  const nasal = side === "R" ? 1 : -1;
+  const opposite = side === "R" ? "L" : "R";
+
+  const ipsilateralMLF = $(side + "MLF").checked;
+  const contralateralMLF = $(opposite + "MLF").checked;
+
+  const count =
+    Number(n[3]) + Number(n[4]) + Number(n[6]);
+
+  let bx = 0;
+  let by = 0;
+  let rotation = 0;
+
+  // Illustrative resting deviations for isolated nerve palsies.
+  if (count === 1) {
+    if (n[3]) {
+      bx = -nasal * 43;
+      by = 27;
+    }
+
+    if (n[4]) {
+      by = -16;
+      rotation = -nasal * 16;
+    }
+
+    if (n[6]) {
+      bx = nasal * 30;
+    }
+  }
+
+  const adduction = gaze.x * nasal > 0;
+  const abduction = gaze.x * nasal < 0;
+
+  let dx = gaze.x * 64 * p;
+
+  if (gaze.x !== 0) {
+    // CN III palsy or MLF interruption impairs conjugate adduction.
+    if (adduction && (n[3] || ipsilateralMLF)) {
+      dx = 0;
+    }
+
+    if (abduction && n[6]) {
+      dx = 0;
+    }
+  }
+
+  let verticalGain = 1;
+
+  if (gaze.y !== 0) {
+    if (gaze.y < 0) {
+      // SR and IO are supplied by CN III.
+      verticalGain = n[3] ? 0 : 1;
+    } else {
+      // Qualitative IR/SO weighting by commanded gaze position.
+      let soWeight;
+
+      if (gaze.x === 0) {
+        soWeight = 0.5;
+      } else {
+        soWeight = adduction ? 0.9 : 0.1;
+      }
+
+      verticalGain =
+        (n[3] ? 0 : 1) * (1 - soWeight) +
+        (n[4] ? 0 : 1) * soWeight;
+    }
+  }
+
+  let x = bx + dx;
+  let y = by + gaze.y * 52 * p * verticalGain;
+
+  // Increase the illustrative mismatch in adducted downgaze.
+  if (count === 1 && n[4] && adduction && gaze.y > 0) {
+    y -= 8 * p;
+  }
+
+  /*
+    Contralateral abducting nystagmus associated with INO.
+    Suppress it when the abducting eye has CN VI palsy.
+    Show slow inward drift followed by fast outward correction.
+  */
+  if (
+    contralateralMLF &&
+    abduction &&
+    !n[6] &&
+    time >= 3 &&
+    time < 5
+  ) {
+    const holdTime = time - 3;
+    const frequency = 2.2;
+    const cycle = (holdTime * frequency) % 1;
+
+    let wave;
+
+    if (cycle < 0.85) {
+      wave = 1 - 2 * cycle / 0.85;
+    } else {
+      wave = -1 + 2 * (cycle - 0.85) / 0.15;
+    }
+
+    const envelope =
+      smooth(holdTime / 0.2) *
+      smooth((2 - holdTime) / 0.2);
+
+    x += Math.sign(gaze.x) * 6 * wave * envelope;
+  }
+
+  x = Math.max(-88, Math.min(88, x));
+  y = Math.max(-82, Math.min(82, y));
+
+  return { x, y, r: rotation };
+}
+
+function draw(side, gaze, p) {
+  const center = side === "R" ? 290 : 710;
+  const actual = position(side, gaze, p);
+
+  $("eye" + side).setAttribute(
+    "transform",
+    `translate(${center + actual.x} ${200 + actual.y}) rotate(${actual.r})`
+  );
+
+  $("ref" + side).setAttribute(
+    "transform",
+    `translate(${center + gaze.x * 64 * p} ${200 + gaze.y * 52 * p})`
+  );
+
+  $("ref" + side).style.display =
+    $("reference").checked ? "" : "none";
+
+  const third = palsies(side)[3];
+
+  $("pupil" + side).setAttribute(
+    "r",
+    third && $("pupil").checked ? 31 : 20
+  );
+
+  $("lid" + side).setAttribute(
+    "height",
+    third && $("ptosis").checked ? 242 : 0
+  );
+}
+
+function muscleText(side, gaze) {
+  const n = palsies(side);
+  const mlf = $(side + "MLF").checked;
+  const list = emphasized(side, gaze);
+
+  if (!list.length) {
+    return "Resting alignment; no gaze-specific muscle highlighted.";
+  }
+
+  return list.map(muscle => {
+    const peripheralPalsy = n[nerve[muscle]];
+    const interruptedMLF = muscle === "MR" && mlf;
+
+    let status = "intact";
+    let className = "good";
+
+    if (peripheralPalsy) {
+      status = "peripheral nerve palsy";
+      className = "badge";
+    } else if (interruptedMLF) {
+      status =
+        "CN III intact; conjugate-gaze drive interrupted by MLF lesion";
+      className = "badge";
+    }
+
+    return `
+      <span class="${className}">
+        ${names[muscle]} (${muscle}), CN ${nerve[muscle]}:
+        ${status}
+      </span>
+    `;
+  }).join("<br>");
+}
+
+function finding(side) {
+  const n = palsies(side);
+  const mlf = $(side + "MLF").checked;
+  const label = side === "R" ? "Right eye" : "Left eye";
+  const selected = [3, 4, 6].filter(key => n[key]);
+  const details = [];
+
+  if (!selected.length && !mlf) {
+    return `<p><strong>${label}:</strong> Normal.</p>`;
+  }
+
+  if (n[3]) {
+    details.push(
+      "CN III: MR, SR, IR, and IO are affected. " +
+      "Adduction and elevation are impaired; depression is reduced, " +
+      "with residual SO function if CN IV is intact."
+    );
+
+    if (selected.length === 1) {
+      details.push(
+        "The complete peripheral nerve palsy is illustrated " +
+        "with a down-and-out resting position."
+      );
+    }
+
+    details.push(
+      "Levator weakness can cause ptosis; parasympathetic " +
+      "involvement can cause pupil dilation."
+    );
+  }
+
+  if (n[4]) {
+    details.push(
+      "CN IV: SO is affected. Depression is most impaired " +
+      "in adduction. Isolated nerve palsy is illustrated " +
+      "with hypertropia and extorsion."
+    );
+  }
+
+  if (n[6]) {
+    details.push(
+      "CN VI: LR is affected. Abduction is impaired. " +
+      "Isolated nerve palsy is illustrated with esotropia."
+    );
+  }
+
+  if (mlf) {
+    details.push(
+      "MLF lesion (INO): this eye cannot adduct normally " +
+      "during attempted conjugate gaze away from the lesion. " +
+      "The opposite eye shows abducting nystagmus when " +
+      "its CN VI is intact."
+    );
+
+    details.push(
+      "The MLF selection does not itself add ptosis " +
+      "or pupil dilation."
+    );
+  }
+
+  if (selected.length > 1) {
+    details.push(
+      "Combined nerve palsy: resting alignment is shown " +
+      "neutrally because combined deviations are not " +
+      "modeled quantitatively."
+    );
+  }
+
+  if (mlf && selected.length) {
+    details.push(
+      "Combined central and peripheral deficits are schematic; " +
+      "a peripheral palsy may mask an INO sign."
+    );
+  }
+
+  return `
+    <p><strong>${label}:</strong> ${details.join(" ")}</p>
+  `;
+}
+
+function currentGazeFindings(gaze) {
+  const messages = [];
+
+  for (const side of ["R", "L"]) {
+    const opposite = side === "R" ? "L" : "R";
+    const nasal = side === "R" ? 1 : -1;
+    const label = side === "R" ? "Right" : "Left";
+    const oppositeLabel = opposite === "R" ? "right" : "left";
+
+    if (
+      $(side + "MLF").checked &&
+      gaze.x * nasal > 0
+    ) {
+      messages.push(
+        `${label} INO is demonstrated in this gaze: ` +
+        `${label.toLowerCase()} adduction is impaired.`
+      );
+
+      if (!palsies(opposite)[6]) {
+        messages.push(
+          `The ${oppositeLabel} eye shows abducting nystagmus ` +
+          "during the holding phase."
+        );
+      } else {
+        messages.push(
+          `The ${oppositeLabel} CN VI palsy prevents normal ` +
+          "abduction; the nystagmus illustration is suppressed."
+        );
+      }
+    }
+  }
+
+  if (!messages.length) return "";
+
+  return `
+    <p><strong>Selected gaze:</strong>
+      ${messages.join(" ")}
+    </p>
+  `;
+}
+
+function updateStatus() {
+  const playback = $("playback").value === "all"
+    ? "All gaze positions"
+    : "Repeating selected gaze";
+
+  $("status").textContent =
+    `${playing ? "Playing" : "Paused"} · ${playback}`;
+}
+
+function update() {
+  const gaze = gazes[index];
+
+  $("heading").textContent =
+    gaze.x === 0 && gaze.y === 0
+      ? "Primary position"
+      : "Patient looks: " + gaze.name;
+
+  [...$("gazes").children].forEach((button, i) => {
+    const active = i === index;
+
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+
+  $("muscles").innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Right eye</th>
+          <th>Left eye</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>${muscleText("R", gaze)}</td>
+          <td>${muscleText("L", gaze)}</td>
+        </tr>
+      </tbody>
+    </table>
+  `;
+
+  $("findings").innerHTML =
+    finding("R") +
+    finding("L") +
+    currentGazeFindings(gaze);
+
+  updateStatus();
+}
+
+function render() {
+  const gaze = gazes[index];
+  const p = progress(time);
+
+  draw("R", gaze, p);
+  draw("L", gaze, p);
+
+  let stage;
+
+  if (gaze.x === 0 && gaze.y === 0) {
+    stage = "Resting position";
+  } else if (time < 1) {
+    stage = "Resting position";
+  } else if (time < 3) {
+    stage = "Moving toward the target";
+  } else if (time < 5) {
+    stage = "Holding attempted gaze";
+  } else {
+    stage = "Returning to resting position";
+  }
+
+  $("phase").textContent =
+    (playing ? "" : "Paused · ") + stage;
+}
+
+function choose(i) {
+  index = i;
+  time = 0;
+  last = null;
+
+  update();
+  render();
+}
+
+// Create gaze-selection buttons.
+gazes.forEach((gaze, i) => {
+  const button = document.createElement("button");
+
+  button.type = "button";
+  button.textContent = gaze.name;
+  button.addEventListener("click", () => choose(i));
+
+  $("gazes").appendChild(button);
+});
+
+$("play").addEventListener("click", () => {
+  playing = !playing;
+  last = null;
+
+  $("play").textContent = playing ? "Pause" : "Play";
+
+  updateStatus();
+  render();
+});
+
+$("next").addEventListener("click", () => {
+  choose((index + 1) % gazes.length);
+});
+
+$("normal").addEventListener("click", () => {
+  for (const side of ["R", "L"]) {
+    for (const key of ["3", "4", "6", "MLF"]) {
+      $(side + key).checked = false;
+    }
+  }
+
+  choose(index);
+});
+
+for (const side of ["R", "L"]) {
+  for (const key of ["3", "4", "6", "MLF"]) {
+    $(side + key).addEventListener("change", () => {
+      choose(index);
+    });
+  }
+}
+
+for (const id of ["ptosis", "pupil", "reference"]) {
+  $(id).addEventListener("change", render);
+}
+
+$("playback").addEventListener("change", updateStatus);
+
+document.addEventListener("visibilitychange", () => {
+  // Avoid a time jump when returning to the tab.
+  last = null;
+});
+
+function frame(now) {
+  if (last !== null && playing) {
+    const delta = Math.min((now - last) / 1000, 0.1);
+    time += delta * Number($("speed").value);
+  }
+
+  last = now;
+
+  if (time >= duration) {
+    time %= duration;
+
+    if ($("playback").value === "all") {
+      index = (index + 1) % gazes.length;
+      update();
+    }
+  }
+
+  render();
+  requestAnimationFrame(frame);
+}
+
+update();
+render();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
